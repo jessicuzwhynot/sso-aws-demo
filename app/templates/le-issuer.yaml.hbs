@@ -1,0 +1,22 @@
+apiVersion: cert-manager.io/v1
+kind: ClusterIssuer
+metadata:
+  name: letsencrypt-prod
+  namespace: cert-manager
+spec:
+  acme:
+    privateKeySecretRef:
+      name: letsencrypt-issuer-account-key
+    server: https://acme-v02.api.letsencrypt.org/directory
+    preferredChain: "ISRG Root X1"
+    solvers:
+      - selector:
+          dnsZones:
+            - {{ dns_zone_name }}
+        dns01:
+          route53:
+            region: us-east-1
+            accessKeyID: {{ r53_access_key }}
+            secretAccessKeySecretRef:
+              name: cert-manager
+              key: secret_key

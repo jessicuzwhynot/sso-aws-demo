@@ -1,0 +1,20 @@
+apiVersion: configuration.konghq.com/v1
+kind: KongClusterPlugin
+metadata:
+  name: oidc
+  annotations:
+    kubernetes.io/ingress.class: kong
+config:
+  client_id: {{ keycloak_client_id }}
+  client_secret: {{ keycloak_client_secret }}
+  discovery: {{ keycloak_oidc_discovery_endpoint }}
+  realm: {{ keycloak_realm }}
+  bearer_jwt_auth_enable: "yes"
+  bearer_jwt_auth_signing_algs: ["RS256"]
+  response_type: "code id_token token"
+  bearer_only: "no"
+  token_endpoint_auth_method: "client_secret_post"
+  access_token_header_name: "Authorization"
+  access_token_as_bearer: "yes"
+plugin: oidc
+

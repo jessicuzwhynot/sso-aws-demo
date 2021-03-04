@@ -1,0 +1,75 @@
+kind: ClusterConfig
+apiVersion: eksctl.io/v1alpha5
+metadata:
+  name: {{ cluster_name }}
+  region: us-east-1
+  tags:
+    created-by: jessica
+    purpose: issa-demo
+
+availabilityZones: ["us-east-1a", "us-east-1b", "us-east-1c"]
+vpc:
+  cidr: "192.168.0.0/16"
+  nat:
+    gateway: Single
+  clusterEndpoints:
+    privateAccess: true
+    publicAccess: true
+iam:
+  withOIDC: true
+  serviceAccounts:
+  - metadata:
+      name: external-dns
+      namespace: external-dns
+    attachPolicyARNs:
+        - {{ external_dns_policy_arn }}
+    tags:
+      created-by: jessica
+      purpose: R53 Automation for EKS
+  - metadata:
+      labels:
+        app: cert-manager
+        app.kubernetes.io/component: controller
+        app.kubernetes.io/instance: cert-manager
+        app.kubernetes.io/name: cert-manager
+      name: cert-manager
+      namespace: cert-manager
+    attachPolicyARNs:
+      - {{ cert_manager_policy_arn }}
+    tags:
+      created-by: jessica
+      purpose: LE certificate DNS01 challenges
+  - metadata:
+      name: aws-load-balancer-controller
+      namespace: kube-system
+    attachPolicyARNs:
+      - {{ aws_lb_controller_policy_arn }}
+    tags:
+      purpose: AWS LB controller for EKS clusters
+cloudWatch:
+  clusterLogging:
+    enableTypes: []
+privateCluster:
+  enabled: false
+# see multiple managed node groups selected by labels that are applied to fred deployment spec, depending on job sizes
+managedNodeGroups:
+  - name: system
+    instanceType: t3.medium
+    desiredCapacity: 2
+    minSize: 2
+    maxSize: 5
+    iam:
+      attachPolicyARNs:
+        - "arn:aws:iam::aws:policy/AmazonS3FullAccess"
+        - "arn:aws:iam::aws:policy/AmazonEKSWorkerNodePolicy"
+        - "arn:aws:iam::aws:policy/AmazonEKS_CNI_Policy"
+        - "arn:aws:iam::aws:policy/AmazonEC2ContainerRegistryReadOnly"
+      withAddonPolicies:
+        autoScaler: true
+        imageBuilder: false
+        externalDNS: true
+        certManager: true #for validating DNS01 challenges via R53
+        ebs: true #enables ebs block storage controller
+        efs: true #enables efs storage controller for nfs / multi read write storage
+        albIngress: true #not used yet, but eventually necessary for UI
+        cloudWatch: true
